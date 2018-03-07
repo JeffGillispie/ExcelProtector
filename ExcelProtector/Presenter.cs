@@ -32,8 +32,11 @@ namespace ExcelProtector
 
             set
             {
-                if (!targetFolder.FullName.Equals(value))
+                logger.Trace("Setting target folder path.");
+
+                if (targetFolder == null || !targetFolder.FullName.Equals(value))
                 {
+                    logger.Trace($"Target Folder Path: {value}");
                     targetFolder = new DirectoryInfo(value);
                     OnPropertyChanged(nameof(TargetFolderPath));
                 }
@@ -118,9 +121,12 @@ namespace ExcelProtector
         }
 
         private void Execute(object parameter)
-        {               
+        {
+            logger.Debug("Preparing background worker.");
             IsEnabled = false;
             WorkerProgress = 0;
+            errorCount = 0;
+            protectedCount = 0;
             worker.DoWork += Work;
             worker.ProgressChanged += WorkProgress;
             worker.RunWorkerCompleted += WorkComplete;
@@ -132,6 +138,7 @@ namespace ExcelProtector
                 PasswordBox = passwordBox
             };
 
+            logger.Debug("Initiating worker.");
             worker.RunWorkerAsync(workArgs);
         }
 
@@ -153,7 +160,8 @@ namespace ExcelProtector
 
         private void Work(object sender, DoWorkEventArgs e)
         {
-            var args = e.Argument as WorkArgs;
+            logger.Debug("Preparing protector.");
+            var args = e.Argument as WorkArgs;                        
             CancellationTokenSource cts = new CancellationTokenSource();
             Protector protector = new Protector();
             protector.FileProtected += (fpSender, fi) => worker.ReportProgress(0, fi);
@@ -166,11 +174,21 @@ namespace ExcelProtector
                     cts.Cancel();
             };
 
-            protector.ProtectFiles(
-                args.Folder, 
-                args.Extensions, 
-                args.PasswordBox.Password,
-                cts.Token);
+            logger.Debug("Starting the protection process.");
+
+            try
+            {
+                protector.ProtectFiles(
+                    args.Folder,
+                    args.Extensions,
+                    args.PasswordBox.Password,
+                    cts.Token);
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+                e.Result = ex;
+            }
         }
 
         private void WorkProgress(object sender, ProgressChangedEventArgs e)
@@ -196,8 +214,18 @@ namespace ExcelProtector
         private void WorkComplete(object sender, RunWorkerCompletedEventArgs e)
         {            
             IsEnabled = true;
-            WorkerProgress = 100;
-            MessageBox.Show($"The process has completed with {protectedCount} files protected and {errorCount} errors. See the log file for details.");
+
+            if (e.Result != null && e.Result.GetType().Equals(typeof(Exception)))
+            {
+                var ex = e.Result as Exception;
+                MessageBox.Show($"There was a problem during the protection process. See the log file for details. {ex.Message}");
+            }
+            else
+            {
+                WorkerProgress = 100;
+                logger.Debug($"The process has completed with {errorCount} errors.");
+                MessageBox.Show($"The process has completed with {protectedCount} files protected and {errorCount} errors. See the log file for details.");
+            }
         }
 
         private class WorkArgs

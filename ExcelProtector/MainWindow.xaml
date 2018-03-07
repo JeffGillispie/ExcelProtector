@@ -23,7 +23,9 @@
                 <RowDefinition Height="10" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>            
-            <TextBlock Grid.ColumnSpan="3" Grid.Column="0" Grid.Row="0" TextWrapping="WrapWithOverflow" Text="{Binding InfoText}" />
+            <TextBlock Grid.ColumnSpan="3" Grid.Column="0" Grid.Row="0" 
+                       TextWrapping="WrapWithOverflow" 
+                       Text="{Binding InfoText}" />
             <Label Grid.Column="0" Grid.Row="2">Folder</Label>
             <TextBox Grid.Column="1" Grid.Row="2" 
                      Text="{Binding TargetFolderPath, UpdateSourceTrigger=PropertyChanged}" 
@@ -44,7 +46,8 @@
                 <RowDefinition Height="25" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ProgressBar Grid.Column="0" Grid.Row="0" Value="{Binding WorkerProgress, UpdateSourceTrigger=PropertyChanged}" />
+            <ProgressBar Grid.Column="0" Grid.Row="0" 
+                         Value="{Binding WorkerProgress, UpdateSourceTrigger=PropertyChanged}" />
         </Grid>
         <Grid Margin="150,20,150,0">
             <Grid.ColumnDefinitions>
