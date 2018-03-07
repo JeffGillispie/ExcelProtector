@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Alphaleonis.Win32.Filesystem;
@@ -74,37 +75,47 @@ namespace ExcelProtector
                         
             try
             {
-                var workbook = app.Workbooks.Open(excelFile.FullName);
+                var workbooks = app.Workbooks;
+                var workbook = workbooks.Open(excelFile.FullName);
 
-                if (workbook.ProtectStructure)
+                try
                 {
-                    throw new Exception($"The workbook's ({excelFile.FullName}) structure is already protected.");
-                }
-                else if (workbook.ProtectWindows)
-                {
-                    throw new Exception($"The workbook's ({excelFile.FullName}) windows are protected.");
-                }
-                else if (workbook.HasPassword)
-                {
-                    throw new Exception($"The workbook ({excelFile.FullName}) has a password.");
-                }
-
-                foreach (Worksheet sheet in workbook.Worksheets)
-                {
-                    if (WorksheetIsProtected(sheet))
+                    if (workbook.ProtectStructure)
                     {
-                        throw new Exception($"The worksheet {sheet.Name} in {excelFile.FullName} is protected.");
+                        throw new Exception($"The workbook's ({excelFile.FullName}) structure is already protected.");
+                    }
+                    else if (workbook.ProtectWindows)
+                    {
+                        throw new Exception($"The workbook's ({excelFile.FullName}) windows are protected.");
+                    }
+                    else if (workbook.HasPassword)
+                    {
+                        throw new Exception($"The workbook ({excelFile.FullName}) has a password.");
                     }
 
-                    sheet.Protect(password);
-                }
+                    foreach (Worksheet sheet in workbook.Worksheets)
+                    {
+                        if (WorksheetIsProtected(sheet))
+                        {
+                            throw new Exception($"The worksheet {sheet.Name} in {excelFile.FullName} is protected.");
+                        }
 
-                workbook.Protect(password, true);
-                workbook.Save();
+                        sheet.Protect(password);
+                    }
+
+                    workbook.Protect(password, true);
+                    workbook.Save();
+                }
+                finally
+                {
+                    Marshal.ReleaseComObject(workbook);
+                    Marshal.ReleaseComObject(workbooks);
+                }
             }
             finally
             {
                 app.Quit();
+                Marshal.ReleaseComObject(app);
             }            
         }
 

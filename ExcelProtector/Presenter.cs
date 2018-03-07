@@ -282,8 +282,7 @@ namespace ExcelProtector
         /// <param name="sender">The worker completed sender.</param>
         /// <param name="e">The worker completed event arguments.</param>
         private void WorkComplete(object sender, RunWorkerCompletedEventArgs e)
-        {            
-            IsEnabled = true;
+        {               
             IsWorking = false;
 
             if (e.Result != null && e.Result.GetType().Equals(typeof(Exception)))
@@ -294,8 +293,9 @@ namespace ExcelProtector
             else
             {
                 WorkerProgress = 100;
-                logger.Debug($"The process has completed with {errorCount} errors.");
-                MessageBox.Show($"The process has completed with {protectedCount} files protected and {errorCount} errors. See the log file for details.");
+                string msg = $"The process has completed with {protectedCount} files protected and {errorCount} errors.";
+                logger.Info(msg);
+                MessageBox.Show($"{msg} See the log file for details.");
             }
         }
 
