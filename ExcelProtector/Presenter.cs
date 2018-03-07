@@ -10,6 +10,9 @@ using NLog;
 
 namespace ExcelProtector
 {
+    /// <summary>
+    /// The view model for the main window.
+    /// </summary>
     public class Presenter : ObservableObject
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
@@ -23,7 +26,10 @@ namespace ExcelProtector
             WorkerReportsProgress = true,
             WorkerSupportsCancellation = true
         };
-                
+        
+        /// <summary>
+        /// The path to the folder containing the target Excel files.
+        /// </summary>
         public string TargetFolderPath
         {
             get
@@ -44,6 +50,9 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// Informational text about the process to display to the user.
+        /// </summary>
         public string InfoText
         {
             get
@@ -60,6 +69,9 @@ namespace ExcelProtector
             }
         }
         
+        /// <summary>
+        /// Returns false when the UI text boxes and ok button are disabled otherwise true.
+        /// </summary>
         public bool IsEnabled
         {
             get
@@ -77,6 +89,9 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// Returns true when the worker is working, otherwise false.
+        /// </summary>
         public bool IsWorking
         {
             get
@@ -94,6 +109,9 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// Returns the progress percentage of the background worker.
+        /// </summary>
         public int WorkerProgress
         {
             get
@@ -111,6 +129,9 @@ namespace ExcelProtector
             }
         }
         
+        /// <summary>
+        /// The execute command for the background worker.
+        /// </summary>
         public ICommand ExecuteCommand
         {
             get
@@ -120,6 +141,9 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        ///  The cancel command for the background worker.
+        /// </summary>
         public ICommand CancelCommand
         {
             get
@@ -129,6 +153,9 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// The get target folder command.
+        /// </summary>
         public ICommand GetTargetFolderCommand
         {
             get
@@ -138,6 +165,10 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// Execute the background worker and the protection process.
+        /// </summary>
+        /// <param name="parameter"></param>
         private void Execute(object parameter)
         {
             logger.Debug("Preparing background worker.");
@@ -160,11 +191,17 @@ namespace ExcelProtector
             worker.RunWorkerAsync(workArgs);
         }
 
+        /// <summary>
+        /// Requests cancellation of the background worker.
+        /// </summary>
         private void Cancel()
         {
             worker.CancelAsync();
         }
 
+        /// <summary>
+        /// Launches a folder browser dialog and prompts the user for a target folder.
+        /// </summary>
         private void GetTargetFolder()
         {
             using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
@@ -176,6 +213,11 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// Handles the do work event.
+        /// </summary>
+        /// <param name="sender">Work event sender.</param>
+        /// <param name="e">Work event arguments.</param>
         private void Work(object sender, DoWorkEventArgs e)
         {
             logger.Debug("Preparing protector.");
@@ -209,6 +251,11 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// Handles the background worker progress changed events.
+        /// </summary>
+        /// <param name="sender">The work progress sender.</param>
+        /// <param name="e">Progress changed event arguments.</param>
         private void WorkProgress(object sender, ProgressChangedEventArgs e)
         {
             if (e.UserState != null && e.UserState.GetType().Equals(typeof(FileInfo)))
@@ -229,9 +276,15 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// Handles the background worker completed event.
+        /// </summary>
+        /// <param name="sender">The worker completed sender.</param>
+        /// <param name="e">The worker completed event arguments.</param>
         private void WorkComplete(object sender, RunWorkerCompletedEventArgs e)
         {            
             IsEnabled = true;
+            IsWorking = false;
 
             if (e.Result != null && e.Result.GetType().Equals(typeof(Exception)))
             {

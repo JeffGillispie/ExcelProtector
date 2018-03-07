@@ -13,6 +13,15 @@ namespace ExcelProtector
     {
         private static Logger logger = LogManager.GetCurrentClassLogger();
 
+        /// <summary>
+        /// Iterates over all files in the target directory applying protection 
+        /// to the structure and worksheets of Excel workbooks with the provided
+        /// file extensions.
+        /// </summary>
+        /// <param name="dir">The target directory to search.</param>
+        /// <param name="extensions">The file extensions to search for.</param>
+        /// <param name="password">The password applied to the Excel file.</param>
+        /// <param name="token">The cancellation token used to check if the process should be cancelled.</param>
         public void ProtectFiles(DirectoryInfo dir, string[] extensions, string password, CancellationToken token)
         {
             logger.Debug("Preparing to protect files.");
@@ -53,41 +62,57 @@ namespace ExcelProtector
             }
         }
 
+        /// <summary>
+        /// Applies worksheet and structure protection to a target Excel file.
+        /// </summary>
+        /// <param name="excelFile">The target excel file.</param>
+        /// <param name="password">The password used to apply protection.</param>
         public static void Protect(FileInfo excelFile, string password)
         {
             Application app = new Application();
             app.Visible = false;
-
-            var workbook = app.Workbooks.Open(excelFile.FullName);
-
-            foreach (Worksheet sheet in workbook.Worksheets)
+                        
+            try
             {
-                if (WorksheetIsProtected(sheet))
+                var workbook = app.Workbooks.Open(excelFile.FullName);
+
+                if (workbook.ProtectStructure)
                 {
-                    throw new Exception($"The worksheet {sheet.Name} in {excelFile.FullName} is protected.");
+                    throw new Exception($"The workbook's ({excelFile.FullName}) structure is already protected.");
+                }
+                else if (workbook.ProtectWindows)
+                {
+                    throw new Exception($"The workbook's ({excelFile.FullName}) windows are protected.");
+                }
+                else if (workbook.HasPassword)
+                {
+                    throw new Exception($"The workbook ({excelFile.FullName}) has a password.");
                 }
 
-                sheet.Protect(password);
-            }
+                foreach (Worksheet sheet in workbook.Worksheets)
+                {
+                    if (WorksheetIsProtected(sheet))
+                    {
+                        throw new Exception($"The worksheet {sheet.Name} in {excelFile.FullName} is protected.");
+                    }
 
-            if (workbook.ProtectStructure)
-            {
-                throw new Exception($"The workbook's ({excelFile.FullName}) structure is already protected.");
-            }
-            else if (workbook.ProtectWindows)
-            {
-                throw new Exception($"The workbook's ({excelFile.FullName}) windows are protected.");
-            }
-            else if (workbook.HasPassword)
-            {
-                throw new Exception($"The workbook ({excelFile.FullName}) has a password.");
-            }
+                    sheet.Protect(password);
+                }
 
-            workbook.Protect(password, true);
-            workbook.Save();
-            app.Quit();
+                workbook.Protect(password, true);
+                workbook.Save();
+            }
+            finally
+            {
+                app.Quit();
+            }            
         }
 
+        /// <summary>
+        /// Evaluates if a target worksheet is protected.
+        /// </summary>
+        /// <param name="sheet">The target sheet to evaluate.</param>
+        /// <returns>Returns true if the sheet is protected, otherwise false.</returns>
         private static bool WorksheetIsProtected(Worksheet sheet)
         {
             bool result;
@@ -95,18 +120,35 @@ namespace ExcelProtector
             try
             {
                 sheet.Unprotect(String.Empty);
-                result = true;
+                result = false;
             }
             catch
             {
-                result = false;
+                result = true;
             }
 
             return result;
         }
 
+        /// <summary>
+        /// This event occurs when the 
+        /// <see cref="ProtectFiles(DirectoryInfo, string[], string, CancellationToken)"/> 
+        /// method reports it's progress.
+        /// </summary>
         public event EventHandler<int> ReportProgress;
+
+        /// <summary>
+        /// This event occurs when the 
+        /// <see cref="ProtectFiles(DirectoryInfo, string[], string, CancellationToken)"/>
+        /// method reports that a file has been protected.
+        /// </summary>
         public event EventHandler<FileInfo> FileProtected;
+
+        /// <summary>
+        /// This event occurs when the 
+        /// <see cref="ProtectFiles(DirectoryInfo, string[], string, CancellationToken)"/> 
+        /// method reports that an exception has occured.
+        /// </summary>
         public event EventHandler<Exception> Error;
         
         protected virtual void OnReportProgress(int progress)
