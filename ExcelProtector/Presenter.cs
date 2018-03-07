@@ -15,6 +15,7 @@ namespace ExcelProtector
         private static Logger logger = LogManager.GetCurrentClassLogger();
         private DirectoryInfo targetFolder;        
         private bool isEnabled = true;
+        private bool isWorking = true;
         private int workerProgress = 0;
         private int errorCount = 0;
         private int protectedCount = 0;        
@@ -72,6 +73,23 @@ namespace ExcelProtector
                 {
                     isEnabled = value;
                     OnPropertyChanged(nameof(IsEnabled));
+                }
+            }
+        }
+
+        public bool IsWorking
+        {
+            get
+            {
+                return isWorking;
+            }
+
+            set
+            {
+                if (isWorking != value)
+                {
+                    isWorking = value;
+                    OnPropertyChanged(nameof(IsWorking));
                 }
             }
         }
